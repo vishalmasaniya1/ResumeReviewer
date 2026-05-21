@@ -30,6 +30,7 @@ public static class DependencyInjection
 
         if (provider.Equals("PostgreSQL", StringComparison.OrdinalIgnoreCase))
         {
+            connectionString = ConvertPostgreSqlUriToConnectionString(connectionString);
             services.AddDbContext<ApplicationDbContext>(options =>
                 options.UseNpgsql(connectionString, b => b.MigrationsAssembly("ResumeReviewer.WebAPI")));
         }
@@ -96,5 +97,30 @@ public static class DependencyInjection
         services.AddScoped<IBackgroundJobDispatcher, BackgroundJobDispatcher>();
 
         return services;
+    }
+
+    private static string? ConvertPostgreSqlUriToConnectionString(string? uriString)
+    {
+        if (string.IsNullOrEmpty(uriString) || (!uriString.StartsWith("postgres://") && !uriString.StartsWith("postgresql://")))
+        {
+            return uriString;
+        }
+
+        try
+        {
+            var uri = new System.Uri(uriString);
+            var userInfo = uri.UserInfo.Split(':');
+            var username = userInfo[0];
+            var password = userInfo.Length > 1 ? userInfo[1] : "";
+            var host = uri.Host;
+            var port = uri.Port > 0 ? uri.Port : 5432;
+            var database = uri.AbsolutePath.TrimStart('/');
+
+            return $"Host={host};Port={port};Database={database};Username={username};Password={password};SSL Mode=Require;Trust Server Certificate=true;";
+        }
+        catch
+        {
+            return uriString;
+        }
     }
 }
