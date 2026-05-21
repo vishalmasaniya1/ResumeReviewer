@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TalentAI - Recruiter Dashboard</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Main Stylesheet -->
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="dark-theme">
+    
+    <!-- Login View (Shown when not authenticated) -->
+    <div id="login-view" class="auth-container hidden">
+        <div class="auth-card">
+            <div class="auth-brand">
+                <div class="logo-icon">
+                    <i class="fa-solid fa-brain-circuit"></i>
+                </div>
+                <h2>Talent<span>AI</span></h2>
+                <p>Candidate Screening & AI Review Suite</p>
+            </div>
+            
+            <form id="login-form">
+                <div class="form-group">
+                    <label for="login-email">Email Address</label>
+                    <div class="input-wrapper">
+                        <i class="fa-regular fa-envelope"></i>
+                        <input type="email" id="login-email" required placeholder="recruiter@recruiter.com" value="recruiter@recruiter.com">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="login-password">Password</label>
+                    <div class="input-wrapper">
+                        <i class="fa-solid fa-lock"></i>
+                        <input type="password" id="login-password" required placeholder="••••••••" value="Password123">
+                    </div>
+                </div>
+                <div id="login-error" class="error-msg hidden">
+                    <i class="fa-solid fa-triangle-exclamation"></i> <span>Invalid email or password.</span>
+                </div>
+                <button type="submit" class="btn btn-primary btn-block">
+                    <span>Login Securely</span>
+                    <i class="fa-solid fa-arrow-right"></i>
+                </button>
+            </form>
+            <div class="auth-footer">
+                <p>System fallback: Use default credentials seeded on startup.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Application Shell (Shown when authenticated) -->
+    <div id="app-shell" class="dashboard-layout">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="sidebar-brand">
+                <div class="logo-icon">
+                    <i class="fa-solid fa-brain"></i>
+                </div>
+                <h2>Talent<span>AI</span></h2>
+            </div>
+            
+            <nav class="sidebar-menu">
+                <a href="#dashboard" class="menu-item active" data-view="dashboard">
+                    <i class="fa-solid fa-chart-pie"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="#jobs" class="menu-item" data-view="jobs">
+                    <i class="fa-solid fa-briefcase"></i>
+                    <span>Job Openings</span>
+                </a>
+                <a href="#screening" class="menu-item" data-view="screening">
+                    <i class="fa-solid fa-user-gear"></i>
+                    <span>Screening Zone</span>
+                </a>
+                <a href="#analytics" class="menu-item" data-view="analytics">
+                    <i class="fa-solid fa-chart-simple"></i>
+                    <span>Analytics</span>
+                </a>
+                <a href="/hangfire" target="_blank" class="menu-item">
+                    <i class="fa-solid fa-microchip"></i>
+                    <span>Background Jobs</span>
+                    <i class="fa-solid fa-up-right-from-square external-icon"></i>
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="user-profile">
+                    <div class="user-avatar">
+                        <i class="fa-solid fa-user-tie"></i>
+                    </div>
+                    <div class="user-details">
+                        <span class="user-name" id="user-display-name">Recruiter</span>
+                        <span class="user-role">Administrator</span>
+                    </div>
+                </div>
+                <button id="logout-btn" class="btn-logout" title="Log Out">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <!-- Header -->
+            <header class="main-header">
+                <div class="header-search">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input type="text" id="global-search" placeholder="Search resumes, jobs, candidates...">
+                </div>
+                <div class="header-actions">
+                    <div class="system-status">
+                        <span class="status-dot online"></span>
+                        <span class="status-text">AI Core: <strong id="ai-provider-badge">Mock</strong></span>
+                    </div>
+                    <div class="notification-bell">
+                        <i class="fa-regular fa-bell"></i>
+                        <span class="badge"></span>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Container for View Contents -->
+            <div id="view-container" class="view-content-wrapper">
+                
+                <!-- 1. DASHBOARD VIEW -->
+                <section id="view-dashboard" class="app-view">
+                    <div class="view-header">
+                        <div>
+                            <h1>Recruitment Dashboard</h1>
+                            <p class="subtitle">Real-time candidate metrics and screening status</p>
+                        </div>
+                        <button class="btn btn-primary" onclick="window.location.hash='#screening'">
+                            <i class="fa-solid fa-plus"></i> Screen New Candidate
+                        </button>
+                    </div>
+
+                    <!-- Metric Cards Grid -->
+                    <div class="metrics-grid">
+                        <div class="metric-card">
+                            <div class="card-icon blue">
+                                <i class="fa-solid fa-file-invoice"></i>
+                            </div>
+                            <div class="metric-info">
+                                <span class="metric-label">Total Resumes</span>
+                                <h3 class="metric-value" id="stat-total-resumes">-</h3>
+                            </div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="card-icon green">
+                                <i class="fa-solid fa-briefcase"></i>
+                            </div>
+                            <div class="metric-info">
+                                <span class="metric-label">Active Jobs</span>
+                                <h3 class="metric-value" id="stat-active-jobs">-</h3>
+                            </div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="card-icon orange">
+                                <i class="fa-solid fa-bolt"></i>
+                            </div>
+                            <div class="metric-info">
+                                <span class="metric-label">Avg. Match Score</span>
+                                <h3 class="metric-value" id="stat-avg-score">-</h3>
+                            </div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="card-icon purple">
+                                <i class="fa-solid fa-spinner"></i>
+                            </div>
+                            <div class="metric-info">
+                                <span class="metric-label">Pending Reviews</span>
+                                <h3 class="metric-value" id="stat-pending-reviews">-</h3>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Dashboard Layout Row -->
+                    <div class="dashboard-row">
+                        <!-- Top Matches Section -->
+                        <div class="dashboard-col col-8">
+                            <div class="content-panel">
+                                <div class="panel-header">
+                                    <h3>Top Ranked Candidates</h3>
+                                    <div class="panel-actions">
+                                        <select id="dashboard-job-filter" class="form-select">
+                                            <option value="">All Job Descriptions</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="table-responsive">
+                                    <table class="data-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Candidate</th>
+                                                <th>Applied Position</th>
+                                                <th>Match Score</th>
+                                                <th>Status</th>
+                                                <th>Screened Date</th>
+                                                <th>Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="top-matches-table-body">
+                                            <!-- Dynamically populated -->
+                                            <tr>
+                                                <td colspan="6" class="text-center">Loading matches...</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- System Overview / Quick Actions -->
+                        <div class="dashboard-col col-4">
+                            <div class="content-panel">
+                                <div class="panel-header">
+                                    <h3>Recent Activities</h3>
+                                </div>
+                                <div class="activity-timeline" id="recent-activities-list">
+                                    <!-- Dynamic -->
+                                    <div class="timeline-empty">Loading activities...</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 2. JOBS VIEW -->
+                <section id="view-jobs" class="app-view hidden">
+                    <div class="view-header">
+                        <div>
+                            <h1>Job Descriptions</h1>
+                            <p class="subtitle">Create and manage target profiles for candidates</p>
+                        </div>
+                        <button class="btn btn-primary" id="open-job-modal-btn">
+                            <i class="fa-solid fa-plus"></i> Create Job Description
+                        </button>
+                    </div>
+
+                    <!-- Jobs Grid -->
+                    <div class="jobs-grid" id="jobs-cards-container">
+                        <!-- Dynamically populated -->
+                    </div>
+                </section>
+
+                <!-- 3. SCREENING ZONE VIEW -->
+                <section id="view-screening" class="app-view hidden">
+                    <div class="view-header">
+                        <div>
+                            <h1>Candidate Screening Zone</h1>
+                            <p class="subtitle">Upload resumes and run semantic matching algorithms</p>
+                        </div>
+                    </div>
+
+                    <div class="screening-container">
+                        <!-- Left Panel: Form & Upload -->
+                        <div class="screening-form-panel">
+                            <div class="content-panel">
+                                <h3>New Screening Profile</h3>
+                                <p class="panel-desc">Select a target job and upload a candidate resume (PDF/DOCX) to start parsing & evaluation.</p>
+                                
+                                <form id="screening-form">
+                                    <div class="form-group">
+                                        <label for="screen-job-id">Select Target Job Description <span class="required">*</span></label>
+                                        <select id="screen-job-id" required class="form-select">
+                                            <option value="" disabled selected>Select a job...</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="form-row">
+                                        <div class="form-group col-6">
+                                            <label for="screen-candidate-first-name">Candidate First Name</label>
+                                            <input type="text" id="screen-candidate-first-name" placeholder="e.g. Jane">
+                                        </div>
+                                        <div class="form-group col-6">
+                                            <label for="screen-candidate-last-name">Candidate Last Name</label>
+                                            <input type="text" id="screen-candidate-last-name" placeholder="e.g. Doe">
+                                        </div>
+                                    </div>
+
+                                    <div class="form-row">
+                                        <div class="form-group col-6">
+                                            <label for="screen-candidate-email">Candidate Email <span class="required">*</span></label>
+                                            <input type="email" id="screen-candidate-email" required placeholder="e.g. jane.doe@example.com">
+                                        </div>
+                                        <div class="form-group col-6">
+                                            <label for="screen-candidate-phone">Candidate Phone</label>
+                                            <input type="tel" id="screen-candidate-phone" placeholder="e.g. +1 555-0199">
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <label>Resume File (PDF, DOCX) <span class="required">*</span></label>
+                                        <div class="upload-dropzone" id="resume-dropzone">
+                                            <input type="file" id="resume-file-input" accept=".pdf,.docx" class="hidden">
+                                            <div class="dropzone-content">
+                                                <i class="fa-solid fa-cloud-arrow-up"></i>
+                                                <p class="main-text">Drag & drop resume here, or <span>browse files</span></p>
+                                                <p class="sub-text">Supported formats: PDF, DOCX (Max size: 5MB)</p>
+                                            </div>
+                                            <div class="dropzone-file-selected hidden">
+                                                <i class="fa-solid fa-file-pdf file-type-icon"></i>
+                                                <div class="file-info">
+                                                    <span class="file-name">resume.pdf</span>
+                                                    <span class="file-size">1.2 MB</span>
+                                                </div>
+                                                <button type="button" class="btn-remove-file"><i class="fa-solid fa-xmark"></i></button>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <button type="submit" class="btn btn-primary btn-block" id="btn-start-screening">
+                                        <i class="fa-solid fa-wand-magic-sparkles"></i>
+                                        <span>Process Resume & Evaluate Match</span>
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+
+                        <!-- Right Panel: Processing Queue -->
+                        <div class="screening-queue-panel">
+                            <div class="content-panel">
+                                <h3>Processing & Screening Status</h3>
+                                <div class="queue-status-wrapper" id="queue-status-container">
+                                    <!-- Dynamic list of processing items -->
+                                    <div class="queue-empty">
+                                        <i class="fa-solid fa-list-check"></i>
+                                        <p>No active screening tasks. Upload a resume to launch the AI process.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 4. MATCH DETAILS VIEW -->
+                <section id="view-match-details" class="app-view hidden">
+                    <div class="view-header">
+                        <button class="btn-back" id="back-to-dashboard-btn">
+                            <i class="fa-solid fa-arrow-left"></i> Back to Dashboard
+                        </button>
+                        <div>
+                            <h1 id="match-candidate-name">Candidate Match Details</h1>
+                            <p class="subtitle" id="match-candidate-meta">Evaluating profile against Job Position</p>
+                        </div>
+                    </div>
+
+                    <div class="match-details-grid">
+                        <!-- Score & High Level Overview -->
+                        <div class="detail-column-side">
+                            <div class="content-panel score-summary-panel">
+                                <div class="match-score-gauge">
+                                    <div class="gauge-ring">
+                                        <div class="gauge-value" id="match-gauge-value">0%</div>
+                                        <div class="gauge-label">Match Score</div>
+                                    </div>
+                                </div>
+                                
+                                <div class="match-meta-list">
+                                    <div class="meta-item">
+                                        <span class="label">Candidate:</span>
+                                        <span class="value" id="detail-candidate-name">-</span>
+                                    </div>
+                                    <div class="meta-item">
+                                        <span class="label">Email:</span>
+                                        <span class="value" id="detail-candidate-email">-</span>
+                                    </div>
+                                    <div class="meta-item">
+                                        <span class="label">Phone:</span>
+                                        <span class="value" id="detail-candidate-phone">-</span>
+                                    </div>
+                                    <div class="meta-item">
+                                        <span class="label">Job Match:</span>
+                                        <span class="value" id="detail-job-title">-</span>
+                                    </div>
+                                    <div class="meta-item">
+                                        <span class="label">Screening Status:</span>
+                                        <span class="badge" id="detail-match-status">-</span>
+                                    </div>
+                                    <div class="meta-item">
+                                        <span class="label">Experience:</span>
+                                        <span class="value" id="detail-experience-years">-</span>
+                                    </div>
+                                </div>
+
+                                <div class="panel-buttons">
+                                    <a href="#" target="_blank" class="btn btn-secondary btn-block" id="btn-download-resume">
+                                        <i class="fa-solid fa-file-arrow-down"></i> Download Original Resume
+                                    </a>
+                                    <button class="btn btn-accent btn-block" id="btn-re-screen">
+                                        <i class="fa-solid fa-rotate"></i> Re-Run Screening
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Deep AI Insights & Feedback -->
+                        <div class="detail-column-main">
+                            <div class="content-panel insights-panel">
+                                <!-- Navigation tabs inside detailed review -->
+                                <div class="panel-tabs">
+                                    <button class="tab-btn active" data-tab="ai-feedback">AI Feedback & Profile</button>
+                                    <button class="tab-btn" data-tab="parsed-data">Extracted Details</button>
+                                </div>
+
+                                <div class="tab-content" id="tab-ai-feedback">
+                                    <!-- Strengths & Missing Skills -->
+                                    <div class="insights-section-row">
+                                        <div class="insight-subcol">
+                                            <h4><i class="fa-solid fa-circle-check text-success"></i> Candidate Strengths</h4>
+                                            <ul class="bullet-list" id="detail-strengths-list">
+                                                <!-- Dynamic -->
+                                            </ul>
+                                        </div>
+                                        <div class="insight-subcol">
+                                            <h4><i class="fa-solid fa-circle-xmark text-danger"></i> Missing Skills / Gaps</h4>
+                                            <div class="tags-container" id="detail-missing-skills-tags">
+                                                <!-- Dynamic -->
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- ATS Improvements -->
+                                    <div class="insights-section">
+                                        <h4><i class="fa-solid fa-wand-magic-sparkles text-info"></i> Suggested ATS Improvements</h4>
+                                        <ul class="bullet-list" id="detail-ats-improvements-list">
+                                            <!-- Dynamic -->
+                                        </ul>
+                                    </div>
+
+                                    <!-- Recruiter Review Text -->
+                                    <div class="insights-section feedback-narrative">
+                                        <h4><i class="fa-solid fa-quote-left text-accent"></i> Executive Recruiter Evaluation</h4>
+                                        <p id="detail-feedback-text">-</p>
+                                    </div>
+
+                                    <!-- Interview Questions -->
+                                    <div class="insights-section">
+                                        <h4><i class="fa-solid fa-circle-question text-purple"></i> Recommended Screening Questions</h4>
+                                        <div class="interview-questions-list" id="detail-questions-container">
+                                            <!-- Dynamic -->
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Parsed Resume Raw Data Tab -->
+                                <div class="tab-content hidden" id="tab-parsed-data">
+                                    <div class="insights-section">
+                                        <h4>Education</h4>
+                                        <div class="timeline-edu-proj" id="detail-education-timeline">
+                                            <!-- Dynamic -->
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="insights-section">
+                                        <h4>Projects</h4>
+                                        <div class="timeline-edu-proj" id="detail-projects-timeline">
+                                            <!-- Dynamic -->
+                                        </div>
+                                    </div>
+
+                                    <div class="insights-section">
+                                        <h4>Skills Extracted</h4>
+                                        <div class="tags-container" id="detail-all-skills-tags">
+                                            <!-- Dynamic -->
+                                        </div>
+                                    </div>
+
+                                    <div class="insights-section">
+                                        <h4>Certifications</h4>
+                                        <div class="tags-container" id="detail-certifications-tags">
+                                            <!-- Dynamic -->
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 5. ANALYTICS VIEW -->
+                <section id="view-analytics" class="app-view hidden">
+                    <div class="view-header">
+                        <div>
+                            <h1>System Analytics</h1>
+                            <p class="subtitle">Aggregate candidate trends, match ratios, and system throughput</p>
+                        </div>
+                    </div>
+
+                    <!-- Analytics Charts Grid -->
+                    <div class="analytics-grid">
+                        <div class="analytics-col col-6">
+                            <div class="content-panel">
+                                <h3>Score Distribution</h3>
+                                <p class="panel-desc">Count of candidates grouped by match score range</p>
+                                <div class="chart-container" id="chart-score-distribution">
+                                    <!-- Custom SVG Chart -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="analytics-col col-6">
+                            <div class="content-panel">
+                                <h3>Applications by Job Category</h3>
+                                <p class="panel-desc">Overview of candidate volume across open requisitions</p>
+                                <div class="chart-container" id="chart-job-category">
+                                    <!-- Custom SVG Chart -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="analytics-row-full mt-4">
+                        <div class="content-panel">
+                            <h3>Analytics Summary Metrics</h3>
+                            <div class="summary-metrics-grid" id="analytics-summary-metrics">
+                                <!-- Dynamic -->
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- MODALS -->
+    <!-- Create Job Modal -->
+    <div id="job-modal" class="modal-backdrop hidden">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3>Create Job Description</h3>
+                <button class="btn-close-modal"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form id="job-form">
+                <div class="modal-body">
+                    <div class="form-row">
+                        <div class="form-group col-6">
+                            <label for="job-title">Job Title <span class="required">*</span></label>
+                            <input type="text" id="job-title" required placeholder="e.g. Senior Backend Engineer">
+                        </div>
+                        <div class="form-group col-6">
+                            <label for="job-department">Department <span class="required">*</span></label>
+                            <input type="text" id="job-department" required placeholder="e.g. Engineering">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group col-6">
+                            <label for="job-location">Location <span class="required">*</span></label>
+                            <input type="text" id="job-location" required placeholder="e.g. Boston, MA (Hybrid)">
+                        </div>
+                        <div class="form-group col-6">
+                            <label for="job-experience">Min. Experience (Years) <span class="required">*</span></label>
+                            <input type="number" id="job-experience" required min="0" value="0">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="job-skills">Required Skills (Comma-separated) <span class="required">*</span></label>
+                        <input type="text" id="job-skills" required placeholder="e.g. C#, .NET Core, SQL Server, Docker">
+                    </div>
+                    <div class="form-group">
+                        <label for="job-content">Job Description Content <span class="required">*</span></label>
+                        <textarea id="job-content" required placeholder="Detailed job specifications, responsibilities, and qualifications..." rows="6"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-close-modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Create Requisition</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="toast" class="toast-notification hidden">
+        <i class="toast-icon fa-solid fa-circle-info"></i>
+        <div class="toast-body">
+            <span class="toast-title">Success</span>
+            <span class="toast-message">Operation completed successfully.</span>
+        </div>
+    </div>
+
+    <!-- Global Application Scripts -->
+    <script src="js/components.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>

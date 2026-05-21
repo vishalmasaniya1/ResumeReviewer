@@ -1,0 +1,21 @@
+# Build outputs
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+
+# User Uploads and Local DBs
+src/ResumeReviewer.WebAPI/resumereviewer.db
+src/ResumeReviewer.WebAPI/uploads/*
+!src/ResumeReviewer.WebAPI/uploads/.gitkeep
+
+# IDE and OS
+.vs/
+.vscode/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+Thumbs.db
+ehthumbs.db
+Desktop.ini
